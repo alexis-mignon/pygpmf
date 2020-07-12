@@ -1,0 +1,8 @@
+numpy
+matplotlib
+gpxpy
+python-ffmpeg
+geopandas
+descartes
+contextily
+pandas
