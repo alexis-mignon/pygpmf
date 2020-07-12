@@ -23,6 +23,22 @@ GPSData = namedtuple("GPSData",
 
 
 def extract_gps_blocks(stream):
+    """ Extract GPS data blocks from binary stream
+
+    This is a generator on lists `KVLItem` objects. In
+    the GPMF stream, GPS data comes into blocks of several
+    different data items. For each of these blocks we return a list.
+
+    Parameters
+    ----------
+    stream: bytes
+        The raw GPMF binary stream
+
+    Returns
+    -------
+    gps_items_generator: generator
+        Generator of lists of `KVLItem` objects
+    """
     for s in parse.filter_klv(stream, "STRM"):
         content = []
         is_gps = False
@@ -35,6 +51,18 @@ def extract_gps_blocks(stream):
 
 
 def parse_gps_block(gps_block):
+    """Turn GPS data blocks into `GPSData` objects
+
+    Parameters
+    ----------
+    gps_block: list of KVLItem
+        A list of KVLItem corresponding to a GPS data block.
+
+    Returns
+    -------
+    gps_data: GPSData
+        A GPSData object holding the GPS information of a block.
+    """
     block_dict = {
         s.key: s for s in gps_block
     }
@@ -82,6 +110,24 @@ def _make_speed_extensions(gps_data, i):
 
 
 def make_pgx_segment(gps_blocks, first_only=False, speeds_as_extensions=True):
+    """Convert a list of GPSData objects into a GPX track segment.
+
+    Parameters
+    ----------
+    gps_blocks: list of GPSData
+        A list of GPSData objects
+    first_only: bool, optional (default=False)
+        If True use only the first GPS entry of each data block.
+    speeds_as_extensions: bool, optional (default=True)
+        If True, include 2d and 3d speed values as exentensions of
+        the GPX trackpoints. This is especially useful when saving
+        to GPX 1.1 format.
+
+    Returns
+    -------
+    gpx_segment: gpxpy.gpx.GPXTrackSegment
+        A gpx track segment.
+    """
 
     track_segment = gpxpy.gpx.GPXTrackSegment()
     dt = timedelta(seconds=1.0 / 18.)

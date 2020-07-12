@@ -13,6 +13,17 @@ LAMBERT93 = "EPSG:2154"
 
 
 def to_dataframe(gps_data_blocks):
+    """Convert a sequence of GPSData into pandas dataframe.
+
+    Parameters
+    ----------
+    gps_data_blocks: seq of GPSData
+        A sequence of GPSData objects
+    Returns
+    -------
+    df_gps: pandas.DataFrame
+        The output dataframe
+    """
     df_blocks = []
     for i, block in enumerate(gps_data_blocks):
         df_block = pandas.DataFrame()
@@ -31,6 +42,7 @@ def to_dataframe(gps_data_blocks):
 
 
 def filter_outliers(x):
+    """Filter outliers based on 0.01 and 0.99 quantiles"""
     q01, q50, q99 = numpy.quantile(x, q=[0.01, 0.5, 0.99])
     return (q50 - (1.1 * (q50 - q01)) < x) & (x < q50 + (1.1 * (q99 - q50)))
 
@@ -42,6 +54,27 @@ def plot_gps_trace(latlon,
                    figsize=(10, 10),
                    proj_crs=LAMBERT93,
                    color="tab:red"):
+    """ Plot a (lat, lon) coordinates on a Map
+
+    Parameters
+    ----------
+    latlon: numpy.ndarray
+        Array of (latitude, longitude) coordinates
+    min_tile_size: int, optional (default=10)
+        Minimum size of the map in km
+    map_provider: dict
+        Dictionnary describing a map provider as given by `contextly.providers`. If None
+        `contextily.providers.GeoportailFrance["maps"]` is used.
+    zoom: int, optional (default=12)
+        The zoom level used.
+    figsize: tuple of int, optional (default=(10, 10))
+        The matplotlib figure size
+    proj_crs: str or geopandas.CRS object, optional (default="EPSG:2154")
+        The projection system used to compute distances on the map. The default value
+        corresponds to the Lambert 93 system.
+    color: str, optional (default="tab:red")
+        The color used to plot the track.
+    """
     if map_provider is None:
         map_provider = ctx.providers.GeoportailFrance["maps"]
 
@@ -92,6 +125,27 @@ def plot_gps_trace_from_stream(stream,
                                output_path=None,
                                precision_max=3.0,
                                color="tab:red"):
+    """ Plot GPS data from a string on a map.
+
+        Parameters
+        ----------
+        stream: bytes
+            The raw GPMF binary stream.
+        min_tile_size: int, optional (default=10)
+            Minimum size of the map in km
+        map_provider: dict
+            Dictionnary describing a map provider as given by `contextly.providers`. If None
+            `contextily.providers.GeoportailFrance["maps"]` is used.
+        zoom: int, optional (default=12)
+            The zoom level used.
+        figsize: tuple of int, optional (default=(10, 10))
+            The matplotlib figure size
+        proj_crs: str or geopandas.CRS object, optional (default="EPSG:2154")
+            The projection system used to compute distances on the map. The default value
+            corresponds to the Lambert 93 system.
+        color: str, optional (default="tab:red")
+            The color used to plot the track.
+    """
     gps_data_blocks = map(parse_gps_block, extract_gps_blocks(stream))
 
     if first_only:

@@ -19,5 +19,6 @@ if __name__ == "__main__":
             "numpy", "pandas", "gpxpy",
             "python-ffmpeg", "geopandas",
             "contextily", "descartes"
-        ]
+        ],
+        url="https://github.com/alexis-mignon/pygpmf"
     )
