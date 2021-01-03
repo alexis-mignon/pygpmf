@@ -1,7 +1,7 @@
 numpy
 matplotlib
 gpxpy
-python-ffmpeg
+ffmpeg-python
 geopandas
 descartes
 contextily
