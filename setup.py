@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 import pathlib
-from gpmf import __version__
+__version__ = "0.1"
 
 HERE = pathlib.Path(__file__).parent
 README = (HERE / "README.md").read_text()
@@ -17,7 +17,7 @@ if __name__ == "__main__":
         packages=find_packages(),
         install_requires=[
             "numpy", "pandas", "gpxpy",
-            "python-ffmpeg", "geopandas",
+            "ffmpeg-python", "geopandas",
             "contextily", "descartes"
         ],
         url="https://github.com/alexis-mignon/pygpmf"
