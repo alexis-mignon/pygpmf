@@ -2,7 +2,6 @@ from collections import namedtuple
 from datetime import datetime, timedelta
 from xml.etree import ElementTree as ET
 
-import gpxpy
 from . import parse
 
 
@@ -96,69 +95,3 @@ FIX_TYPE = {
     2: "2d",
     3: "3d"
 }
-
-
-def _make_speed_extensions(gps_data, i):
-    speed_2d = ET.Element("speed_2d")
-    value = ET.SubElement(speed_2d, "value")
-    value.text = "%g" % gps_data.speed_2d[i]
-    unit = ET.SubElement(speed_2d, "unit")
-    unit.text = "m/s"
-
-    speed_3d = ET.Element("speed_3d")
-    value = ET.SubElement(speed_3d, "value")
-    value.text = "%g" % gps_data.speed_3d[i]
-    unit = ET.SubElement(speed_3d, "unit")
-    unit.text = "m/s"
-
-    return [speed_2d, speed_3d]
-
-
-def make_pgx_segment(gps_blocks, first_only=False, speeds_as_extensions=True):
-    """Convert a list of GPSData objects into a GPX track segment.
-
-    Parameters
-    ----------
-    gps_blocks: list of GPSData
-        A list of GPSData objects
-    first_only: bool, optional (default=False)
-        If True use only the first GPS entry of each data block.
-    speeds_as_extensions: bool, optional (default=True)
-        If True, include 2d and 3d speed values as exentensions of
-        the GPX trackpoints. This is especially useful when saving
-        to GPX 1.1 format.
-
-    Returns
-    -------
-    gpx_segment: gpxpy.gpx.GPXTrackSegment
-        A gpx track segment.
-    """
-
-    track_segment = gpxpy.gpx.GPXTrackSegment()
-    dt = timedelta(seconds=1.0 / 18.)
-
-    for gps_data in gps_blocks:
-        time = datetime.strptime(gps_data.timestamp, "%Y-%m-%d %H:%M:%S.%f")
-        # Reference says the frequency is about 18 Hz and other GPS data about 1Hz
-        stop = 1 if first_only else gps_data.npoints
-        for i in range(stop):
-            tp = gpxpy.gpx.GPXTrackPoint(
-                latitude=gps_data.latitude[i],
-                longitude=gps_data.longitude[i],
-                elevation=gps_data.altitude[i],
-                speed=gps_data.speed_3d[i],
-                position_dilution=gps_data.precision,
-                time=time + i * dt,
-                symbol="Square",
-            )
-
-            tp.type_of_gpx_fix = FIX_TYPE[gps_data.fix]
-
-            if speeds_as_extensions:
-
-                for e in _make_speed_extensions(gps_data, 0):
-                    tp.extensions.append(e)
-
-            track_segment.points.append(tp)
-
-    return track_segment
