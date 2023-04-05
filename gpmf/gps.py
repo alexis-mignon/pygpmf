@@ -8,17 +8,19 @@ from . import parse
 
 GPSData = namedtuple("GPSData",
                      [
-                         "description",
-                         "timestamp",
-                         "precision",
-                         "fix",
-                         "latitude",
-                         "longitude",
-                         "altitude",
-                         "speed_2d",
-                         "speed_3d",
-                         "units",
-                         "npoints"
+                         "description", 
+                         "timestamp", # yyyy-mm-dd HH:MM:SS.FFF
+                         "microseconds", # microseconds since beginning of recording
+                         "samples_delivered", # number of samples delivered since beginning of recording
+                         "precision", # gps precision (under 500 is good)
+                         "fix", # indicates if the go pro orientation is fixed
+                         "latitude", # latitude [deg]
+                         "longitude", # longitude [deg]
+                         "altitude", # altitude (z) [m]
+                         "speed_2d", # speed in 2d (x, y) [m/s]
+                         "speed_3d", # speed in 3d (x, y, z) [m/s]
+                         "units", # units of various quantities
+                         "npoints", # number of gps points
                      ])
 
 
@@ -47,6 +49,7 @@ def extract_gps_blocks(stream):
             if elt.key == "GPS5":
                 is_gps = True
         if is_gps:
+            # print(content)
             yield content
 
 
@@ -74,6 +77,8 @@ def parse_gps_block(gps_block):
     return GPSData(
         description=block_dict["STNM"].value,
         timestamp=block_dict["GPSU"].value,
+        microseconds=block_dict["STMP"].value,
+        samples_delivered=block_dict['TSMP'].value,
         precision=block_dict["GPSP"].value / 100.,
         fix=block_dict["GPSF"].value,
         latitude=latitude,
