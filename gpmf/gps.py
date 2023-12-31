@@ -4,6 +4,7 @@ from xml.etree import ElementTree as ET
 
 import gpxpy
 from . import parse
+import numpy as np
 
 
 GPSData = namedtuple("GPSData",
@@ -67,23 +68,31 @@ def parse_gps_block(gps_block):
         s.key: s for s in gps_block
     }
 
-    gps_data = block_dict["GPS5"].value * 1.0 / block_dict["SCAL"].value
+    gps5_array = block_dict["GPS5"].value
+    scal_array = block_dict["SCAL"].value
+    if gps5_array.size > 0 and scal_array.size > 0:
+        gps_data = gps5_array * 1.0 / scal_array
+    else:
+        gps_data = None
 
-    latitude, longitude, altitude, speed_2d, speed_3d = gps_data.T
+    if gps_data is not None:
+        latitude, longitude, altitude, speed_2d, speed_3d = gps_data.T
 
-    return GPSData(
-        description=block_dict["STNM"].value,
-        timestamp=block_dict["GPSU"].value,
-        precision=block_dict["GPSP"].value / 100.,
-        fix=block_dict["GPSF"].value,
-        latitude=latitude,
-        longitude=longitude,
-        altitude=altitude,
-        speed_2d=speed_2d,
-        speed_3d=speed_3d,
-        units=block_dict["UNIT"].value,
-        npoints=len(gps_data)
-    )
+        return GPSData(
+            description=block_dict["STNM"].value,
+            timestamp=block_dict["GPSU"].value,
+            precision=block_dict["GPSP"].value / 100.,
+            fix=block_dict["GPSF"].value,
+            latitude=latitude,
+            longitude=longitude,
+            altitude=altitude,
+            speed_2d=speed_2d,
+            speed_3d=speed_3d,
+            units=block_dict["UNIT"].value,
+            npoints=len(gps_data)
+        )
+    else:
+        return None
 
 
 FIX_TYPE = {
@@ -133,27 +142,28 @@ def make_pgx_segment(gps_blocks, first_only=False, speeds_as_extensions=True):
     dt = timedelta(seconds=1.0 / 18.)
 
     for gps_data in gps_blocks:
-        time = datetime.strptime(gps_data.timestamp, "%Y-%m-%d %H:%M:%S.%f")
-        # Reference says the frequency is about 18 Hz and other GPS data about 1Hz
-        stop = 1 if first_only else gps_data.npoints
-        for i in range(stop):
-            tp = gpxpy.gpx.GPXTrackPoint(
-                latitude=gps_data.latitude[i],
-                longitude=gps_data.longitude[i],
-                elevation=gps_data.altitude[i],
-                speed=gps_data.speed_3d[i],
-                position_dilution=gps_data.precision,
-                time=time + i * dt,
-                symbol="Square",
-            )
+        if gps_data is not None:
+            time = datetime.strptime(gps_data.timestamp, "%Y-%m-%d %H:%M:%S.%f")
+            # Reference says the frequency is about 18 Hz and other GPS data about 1Hz
+            stop = 1 if first_only else gps_data.npoints
+            for i in range(stop):
+                tp = gpxpy.gpx.GPXTrackPoint(
+                    latitude=gps_data.latitude[i],
+                    longitude=gps_data.longitude[i],
+                    elevation=gps_data.altitude[i],
+                    speed=gps_data.speed_3d[i],
+                    position_dilution=gps_data.precision,
+                    time=time + i * dt,
+                    symbol="Square",
+                )
 
-            tp.type_of_gpx_fix = FIX_TYPE[gps_data.fix]
+                tp.type_of_gpx_fix = FIX_TYPE[gps_data.fix]
 
-            if speeds_as_extensions:
+                if speeds_as_extensions:
 
-                for e in _make_speed_extensions(gps_data, 0):
-                    tp.extensions.append(e)
+                    for e in _make_speed_extensions(gps_data, 0):
+                        tp.extensions.append(e)
 
-            track_segment.points.append(tp)
+                track_segment.points.append(tp)
 
     return track_segment
