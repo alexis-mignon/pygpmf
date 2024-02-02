@@ -148,7 +148,7 @@ def make_pgx_segment(gps_blocks, first_only=False, speeds_as_extensions=True):
 
             print(gps_data)
 
-            if((type(gps_data.latitude) != type([])) and (type(gps_data.longitude) != type([]))):
+            if((type(gps_data.latitude) != type(np.array([]))) and (type(gps_data.longitude) != type(np.array([])))):
                 tp = gpxpy.gpx.GPXTrackPoint(
                     latitude=gps_data.latitude,
                     longitude=gps_data.longitude,
