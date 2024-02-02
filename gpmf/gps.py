@@ -102,16 +102,16 @@ FIX_TYPE = {
 }
 
 
-def _make_speed_extensions(gps_data, i):
+def _make_speed_extensions(gps_data, i = None):
     speed_2d = ET.Element("speed_2d")
     value = ET.SubElement(speed_2d, "value")
-    value.text = "%g" % gps_data.speed_2d[i]
+    value.text = ("%g" % gps_data.speed_2d) if i is None else ("%g" % gps_data.speed_2d[i])
     unit = ET.SubElement(speed_2d, "unit")
     unit.text = "m/s"
 
     speed_3d = ET.Element("speed_3d")
     value = ET.SubElement(speed_3d, "value")
-    value.text = "%g" % gps_data.speed_3d[i]
+    value.text = ("%g" % gps_data.speed_3d)  if i is None else ("%g" % gps_data.speed_3d[i])
     unit = ET.SubElement(speed_3d, "unit")
     unit.text = "m/s"
 
@@ -145,7 +145,30 @@ def make_pgx_segment(gps_blocks, first_only=False, speeds_as_extensions=True):
         if gps_data is not None:
             time = datetime.strptime(gps_data.timestamp, "%Y-%m-%d %H:%M:%S.%f")
             # Reference says the frequency is about 18 Hz and other GPS data about 1Hz
-            stop = 1 if first_only else gps_data.npoints
+
+            if((type(gps_data.latitude) != []) and (type(gps_data.longitude) != [])):
+                tp = gpxpy.gpx.GPXTrackPoint(
+                    latitude=gps_data.latitude,
+                    longitude=gps_data.longitude,
+                    elevation=gps_data.altitude,
+                    speed=gps_data.speed_3d,
+                    position_dilution=gps_data.precision,
+                    time=time,
+                    symbol="Square",
+                )
+
+                tp.type_of_gpx_fix = FIX_TYPE[gps_data.fix]
+
+                if speeds_as_extensions:
+
+                    for e in _make_speed_extensions(gps_data, None):
+                        tp.extensions.append(e)
+
+                track_segment.points.append(tp)
+                continue
+
+            # stop = 1 if first_only else gps_data.npoints
+            stop = min([len(gps_data.latitude),len(gps_data.longitude)])
             for i in range(stop):
                 tp = gpxpy.gpx.GPXTrackPoint(
                     latitude=gps_data.latitude[i],
