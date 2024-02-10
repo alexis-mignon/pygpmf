@@ -146,8 +146,6 @@ def make_pgx_segment(gps_blocks, first_only=False, speeds_as_extensions=True):
             time = datetime.strptime(gps_data.timestamp, "%Y-%m-%d %H:%M:%S.%f")
             # Reference says the frequency is about 18 Hz and other GPS data about 1Hz
 
-            print(gps_data)
-
             if((type(gps_data.latitude) != type(np.array([]))) and (type(gps_data.longitude) != type(np.array([])))):
                 tp = gpxpy.gpx.GPXTrackPoint(
                     latitude=gps_data.latitude,
